@@ -1,471 +1,265 @@
 # PDF发票打印工具 for Win7
 
-```
-版本:       v1.46.20260525
-平台:       Windows 7 SP1 x64+
-Electron:   22.3.27  (Chromium 108, Node.js 16.17.1)
-许可:       MIT
-维护者:     帅气的锅巴
-```
+<div align="center">
 
-## 1. 概述
+![Version](https://img.shields.io/badge/version-v1.69.20260604-blue)
+![Platform](https://img.shields.io/badge/platform-Windows%207%2B-lightgrey)
+![Electron](https://img.shields.io/badge/electron-22.3.27-9feaf9)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-PDF发票打印工具是一款 Windows 桌面应用，提供多标签 PDF 阅读和发票批量打印功能。工具面向 Windows 7 SP1 x64，并在 Windows 10/11 上验证通过。
+**一款面向财务/行政人员的 Windows 桌面 PDF 发票批量打印工具**
 
-应用的核心是 **2合1 矢量拼版引擎**：将发票页面按 1cm 边距排列在 A4 纸张上，通过 SumatraPDF 命令行接口静默发送到打印机。
+支持 PDF 查看、发票二合一拼版、静默打印、文档拆分合并，专为 Windows 7 兼容性优化
 
-### 1.1 设计约束
+</div>
 
-- 目标平台 Windows 7 SP1 (NT 6.1)，不使用 Windows 8+ 专有 API
-- Electron 版本 ≤ 22（最后支持 Win7 的版本系列）
-- Chromium ≥ 92（pdfjs-dist 3.x 依赖 ES2022 的 `.at()` 方法）
-- 所有 PDF 渲染在渲染进程完成 (Chromium Canvas)，不经过 Node.js 主进程
-- 构建产物为自包含 NSIS 安装包，用户无需安装额外运行时
+---
 
-### 1.2 功能速览
+## ✨ 功能特性
 
-| 功能 | 快捷键/操作 | 说明 |
-|------|-------------|------|
-| 多标签阅读 | — | 浏览器式标签管理，支持拖拽排序和右键菜单 |
-| 适应宽度 | `Ctrl+1` | 页面宽度填满视口 |
-| 适应页面 | `Ctrl+2` | 页面高度填满视口 |
-| 实际大小 | `Ctrl+3` | 100% 原始尺寸 |
-| 无极缩放 | `Ctrl+滚轮` | 10% 步进自由缩放 |
-| 翻页 | `PageUp/Down` | 上一页/下一页 |
-| 首末页 | `Home/End` | 跳到首页/末页 |
-| 发票打印 | — | 拖拽添加队列，2合1 拼版，静默出纸 |
-| 打印机管理 | — | 自动枚举，手动刷新，属性设置 |
-| 默认关联 | — | 帮助菜单调用系统对话框 |
+- **📄 PDF 阅读器** — 内置 PDF 查看器，支持连续滚动/单页模式、缩放（10%~500%）、适应宽度/页面
+- **🖨️ 发票批量打印** — 支持多张发票 PDF 拖拽导入，一键批量打印
+- **📐 二合一拼版** — 自动将 2 张发票排版到 1 张 A4 纸上，节约 50% 纸张
+- **🔇 静默打印** — 通过 SumatraPDF 引擎后台发送到打印机，无需用户交互
+- **👁️ 打印预览** — 左侧设置右侧预览，实时确认拼版和排版效果
+- **✂️ 文档拆分** — 支持每页独立、每 N 页一组、自定义范围三种拆分模式
+- **🔗 文档合并** — 多 PDF 拖拽排序合并，支持上移下移调整顺序
+- **🗂️ 多标签页** — 同时打开多个 PDF 文件，标签支持拖拽排序、右键关闭
+- **🖥️ Win7 兼容** — 基于 Electron 22（最后支持 Windows 7 的版本），经完整测试
+- **🌏 中文优化** — 完整 CJK 字体映射支持，中文打印机名不乱码
 
-### 1.3 菜单结构
+---
+
+## 📸 界面预览
 
 ```
-打开PDF    发票打印      视图 ▼         帮助 ▼
-(打开文件)  (打印面板)   适应宽度  Ctrl+1  设为默认软件
-                        适应页面  Ctrl+2  ─────────
-                        实际大小  Ctrl+3  关于
-                        放大      Ctrl+=
-                        缩小      Ctrl+-
-                        切换开发者工具
+┌──────────────────────────────────────────────┐
+│  阅读  打印  拆分  合并  视图  帮助             │  ← 菜单栏
+├──────────────────────────────────────────────┤
+│  [标签1] [标签2] ... [+]                      │  ← 标签栏
+├──────────────────────────────────────────────┤
+│                                              │
+│          PDF发票打印工具 for Win7              │
+│      PDF阅读 · 发票批量打印 · 文件拆分合并     │  ← 欢迎页
+│    [📂 阅读] [🖨️ 打印] [✂️ 拆分] [🔗 合并]   │
+│                                              │
+├──────────────────────────────────────────────┤
+│  就绪                                        │  ← 状态栏
+└──────────────────────────────────────────────┘
 ```
 
-## 2. 环境要求
+---
 
-### 2.1 运行环境
+## 🔧 系统需求
 
-| 组件 | 要求 |
+| 项目 | 最低配置 | 推荐配置 |
+|------|----------|----------|
+| 操作系统 | Windows 7 SP1 x64 | Windows 10/11 x64 |
+| 处理器 | 1 GHz | 2 GHz+ |
+| 内存 | 2 GB RAM | 4 GB RAM+ |
+| 硬盘 | 200 MB | 500 MB |
+| 打印机 | Windows 兼容打印机 | — |
+| 显示 | ≥ 1024 × 768 | ≥ 1366 × 768 |
+
+---
+
+## 📥 安装
+
+### 方式一：安装程序（推荐）
+
+从 [Releases]() 页面下载最新版本 `PDF发票打印工具 for Win7_vXX.YYYYMMDD.exe`，双击运行安装向导。
+
+默认安装路径：`C:\Program Files\PDF发票打印工具 for Win7`
+
+### 方式二：便携版
+
+下载便携版压缩包，解压到任意目录，运行 `PDF发票打印工具 for Win7.exe` 即可，无需安装。
+
+---
+
+## 🚀 快速开始
+
+### 发票打印（主要工作流）
+
+1. **启动应用** — 双击桌面图标或开始菜单快捷方式
+2. **打开打印工作区** — 点击欢迎页 [🖨️ 打印] 或菜单栏 [打印]
+3. **添加发票** — 将 PDF 发票文件拖拽到虚线框中（支持多选）
+4. **选择打印机** — 在下拉列表中选择目标打印机
+5. **开始打印** — 点击 [开始打印]，系统自动拼版并发送到打印机
+
+> 💡 **提示**：每 2 张发票自动拼到 1 张 A4 纸上。如需设置双面打印或纸张类型，点击 [打印属性] 打开 Windows 打印机属性对话框。右侧预览区可实时确认排版效果。
+
+### PDF 查看
+
+- **打开文件**：点击 [📂 阅读]，或直接拖拽 PDF 到窗口
+- **多标签**：支持同时打开多个 PDF，标签可拖拽排序
+- **缩放**：`Ctrl+=` 放大 / `Ctrl+-` 缩小 / `Ctrl+鼠标滚轮`
+- **适应**：`Ctrl+1` 适应宽度 / `Ctrl+2` 适应页面 / `Ctrl+3` 实际大小
+- **翻页**：`PageUp/PageDown` 或点击翻页按钮
+
+### 文档拆分
+
+1. 菜单栏 [拆分] 或欢迎页 [✂️ 拆分]
+2. 选择源 PDF 文件
+3. 选择拆分方式（每页独立 / 每 N 页一组 / 自定义范围如 `1-3,5,7-9`）
+4. 选择输出目录 → 点击 [开始拆分]
+
+### 文档合并
+
+1. 菜单栏 [合并] 或欢迎页 [🔗 合并]
+2. 拖拽或选择多个 PDF 文件
+3. 调整合并顺序（↑ 上移 / ↓ 下移）
+4. 选择输出路径 → 点击 [开始合并]
+
+---
+
+## 🛠️ 开发
+
+### 环境准备
+
+```bash
+# 克隆仓库
+git clone <repo-url>
+cd "PDF发票打印工具 for Win7"
+
+# 安装依赖
+npm install
+```
+
+### 常用命令
+
+| 命令 | 说明 |
 |------|------|
-| 操作系统 | Windows 7 SP1 x64 及以上 |
-| 系统更新 | KB2533623 (Windows 7 必需) |
-| 运行时 | Visual C++ 2015 Redistributable (x64) |
-| 打印机 | 已安装打印机驱动 (打印功能需要) |
+| `npm start` | 启动开发模式 |
+| `npm run build` | 构建 NSIS 安装程序（版本号自动递增） |
+| `npm run build:portable` | 构建便携版 |
+| `build-portable.bat` | Windows 一键构建便携版（双击运行） |
 
-### 2.2 开发环境
+### 技术栈
 
-| 组件 | 版本 | 用途 |
+| 技术 | 版本 | 用途 |
 |------|------|------|
-| Node.js | 18.20.x LTS | JavaScript 运行时 |
-| npm | 9.x | 包管理器 |
-| Git | 2.x | 版本控制 |
-| VS Code | 1.98+ | 代码编辑器 |
-| PowerShell | 5.1 | 构建脚本与系统操作 |
-| 7-Zip | 21.07 | 压缩包解压 (electron-builder 依赖) |
+| [Electron](https://www.electronjs.org/) | 22.3.27 | 桌面应用框架（最后支持 Win7） |
+| [PDF.js](https://github.com/mozilla/pdf.js) | 3.11.174 | PDF 渲染引擎 |
+| [pdf-lib](https://github.com/Hopding/pdf-lib) | 1.17.1 | PDF 创建、拼版、拆分、合并 |
+| [SumatraPDF](https://www.sumatrapdfreader.org/) | 便携版 | 静默打印引擎 |
+| [electron-builder](https://www.electron.build/) | 24.9.1 | 应用打包分发 |
 
-## 3. 架构
+---
 
-### 3.1 进程拓扑
-
-```
-MAIN (main.js)
-  ├── IPC 处理器 (13 通道)
-  ├── 拼版引擎 (runImposition)
-  ├── SumatraPDF 打印调度 (execFile)
-  ├── 窗口生命周期管理
-  ├── 自定义菜单构建
-  └── 单实例锁 + 命令行文件打开
-
-RENDERER (src/)
-  ├── TabManager   — 标签状态机、拖拽排序、右键上下文菜单
-  ├── PdfViewer    — pdfjs-dist Worker → Canvas、缩放/滚动/页码追踪
-  └── PrintPanel   — 文件拖放队列、打印机管理、进度条反馈
-
-PRELOAD (preload.js)
-  └── contextBridge.exposeInMainWorld('electronAPI', { ... })
-      暴露 10 个安全 API 到渲染进程
-```
-
-### 3.2 打印流水线数据流
+## 📁 项目结构
 
 ```
-print-panel.js:_startPrint()
-  → ipcRenderer.invoke('print:executePrint', filePaths, printerName)
-  → main.js:ipcMain.handle('print:executePrint', ...)
-    → runImposition(filePaths)              // pdf-lib 2合1 排版
-    → fs.writeFileSync(tempPdf)             // 写入临时文件
-    → execFile(sumatraPath, ['-print-to', ...])
-    → fs.unlinkSync(tempPdf)                // 清理临时文件
-  → sendToRenderer('print:progress', ...)    // 实时进度反馈
-```
-
-### 3.3 SumatraPDF 路径解析
-
-```
-getSumatraPath():
-  候选 1: {exe目录}/SumatraPDF.exe
-  候选 2: {exe目录}/SumatraPDF/SumatraPDF.exe
-  候选 3: {resources}/SumatraPDF.exe
-  候选 4: {resources}/SumatraPDF/SumatraPDF.exe
-
-返回值: 首个 fs.existsSync() 为 true 的路径
-日志: 所有候选路径检查结果写入 app.log
-```
-
-### 3.4 IPC 通道一览
-
-| 通道 | 方向 | 类型 | 功能 |
-|------|------|------|------|
-| `dialog:openPdf` | 渲染→主 | handle | 打开 PDF 文件选择对话框 |
-| `dialog:selectInvoices` | 渲染→主 | handle | 打开发票文件选择对话框 |
-| `fs:readFile` | 渲染→主 | handle | 读取文件二进制内容 |
-| `fs:getFileInfo` | 渲染→主 | handle | 获取文件名和大小 |
-| `print:getPrinters` | 渲染→主 | handle | 枚举 Windows 打印机列表 |
-| `print:executePrint` | 渲染→主 | handle | 执行打印流水线 |
-| `print:printerProperties` | 渲染→主 | handle | 打开打印机属性对话框 |
-| `print:progress` | 主→渲染 | send | 打印阶段进度通知 |
-| `menu:openPdf` | 主→渲染 | send | 菜单 → 打开PDF |
-| `menu:printPanel` | 主→渲染 | send | 菜单 → 发票打印 |
-| `open-file` | 主→渲染 | send | 命令行或双击打开 PDF |
-| `view:fitWidth` 等 | 主→渲染 | send | 视图缩放命令 (6 通道) |
-
-## 4. 拼版引擎
-
-### 4.1 常量
-
-```
-A4_WIDTH     = 595.28   // 磅 (pt)
-A4_HEIGHT    = 841.89   // 磅
-MARGIN       = 28.35    // 1cm = 28.35pt
-availWidth   = 538.58   // A4_WIDTH  - 2 * MARGIN
-availHeight  = 785.19   // A4_HEIGHT - 2 * MARGIN
-halfHeight   = 392.595  // availHeight / 2
-```
-
-### 4.2 主算法
-
-```
-runImposition(filePaths):
-  outputDoc = PDFDocument.create()
-  font = outputDoc.embedFont(StandardFonts.Helvetica)
-
-  for i = 0; i < len(filePaths); i += 2:
-    page = outputDoc.addPage([A4_WIDTH, A4_HEIGHT])
-
-    // 上半部分：发票 i，底部对齐到中线
-    _embedInvoice(outputDoc, page, filePaths[i], font,
-      x=MARGIN, y=MARGIN+halfHeight,
-      maxWidth=availWidth, maxHeight=halfHeight,
-      alignTo='top')
-
-    // 下半部分：发票 i+1（如存在），顶部对齐到中线
-    if i+1 < len(filePaths):
-      _embedInvoice(outputDoc, page, filePaths[i+1], font,
-        x=MARGIN, y=MARGIN,
-        maxWidth=availWidth, maxHeight=halfHeight,
-        alignTo='bottom')
-
-  return outputDoc.save()
-```
-
-### 4.3 缩放与对齐
-
-```
-_embedInvoice(...):
-  srcDoc = PDFDocument.load(sourcePath)
-  [embeddedPage] = outputDoc.embedPdf(srcDoc, [0])
-  dims = embeddedPage.size()
-
-  fitScale  = maxWidth / dims.width     // 仅按宽度适配
-  drawW     = dims.width  * fitScale    // 等比缩放宽度
-  drawH     = dims.height * fitScale    // 等比缩放高度
-
-  drawX = x + (maxWidth - drawW) / 2    // 水平居中
-
-  if alignTo == 'top':
-    drawY = y + maxHeight - drawH        // 底部贴中线
-  elif alignTo == 'bottom':
-    drawY = y                            // 顶部贴中线
-
-  targetPage.drawPage(embeddedPage, {
-    x: drawX, y: drawY,
-    width: drawW, height: drawH
-  })
-```
-
-> 高度不设约束。若 `drawH > maxHeight` 图像将溢出其半区。此为设计意图：发票通常宽度大于高度，按宽度填充可获得最大可读尺寸。
-
-### 4.4 排版效果
-
-```
-单张发票                    多张发票 (5张为例)
-
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│     发票1         │  │     发票1         │  │     发票5         │
-│   (适应宽度)      │  │   (上半部分)      │  │   (上半部分)      │
-├─ ─ ─ ─ ─ ─ ─ ─ ┤  ├──────────────────┤  │                  │
-│     (空白)        │  │     发票2         │  │     (空白)       │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-     第1页 (1张)           第1页                  第3页
-
-                       ┌──────────────────┐
-                       │     发票3         │
-                       ├──────────────────┤
-                       │     发票4         │
-                       └──────────────────┘
-                            第2页
-```
-
-## 5. 平台兼容性
-
-### 5.1 Windows 7 打印机枚举
-
-```
-print:getPrinters:
-  osver = os.release().split('.').map(Number)
-  if osver[0] < 10:                     // NT 6.x = Win7/8/8.1
-    return wmic printer get name         // Get-Printer 不可用
-  else:
-    return Get-Printer | Select Name     // Win8+ 原生 PowerShell cmdlet
-```
-
-`Get-Printer` 需要 PrintManagement 模块 (Windows 8+/Server 2012+)。在 NT 6.x 上 `wmic` 提供等效输出，避免 10 秒 PowerShell 超时。
-
-### 5.2 中文字体回退
-
-```css
-body {
-  font-family:
-    -apple-system, BlinkMacSystemFont,
-    "Segoe UI", "Microsoft YaHei",    /* Windows 10/11 */
-    "SimHei", "SimSun",               /* Windows 7 回退 */
-    sans-serif;
-}
-```
-
-Windows 7 默认未安装 Microsoft YaHei。SimHei (黑体) 和 SimSun (宋体) 自 XP 起在所有中文 Windows 中存在。
-
-### 5.3 Windows 7 运行时依赖
-
-| 依赖 | 文件名 | 原因 |
-|------|--------|------|
-| Service Pack 1 | KB976932 | Electron 22 最低系统要求 |
-| KB2533623 | Windows6.1-KB2533623-x64.msu | `SetDefaultDllDirectories` API (Chromium 90+ 需要) |
-| VC++ 2015 Redist | VC_redist.x64.exe | Electron 运行时 C++ 库依赖 |
-
-## 6. 技术栈
-
-| 组件 | 版本 | 角色 |
-|------|------|------|
-| Electron | 22.3.27 | 桌面框架 (窗口管理、IPC、系统集成) |
-| Chromium | 108 | 渲染引擎 (HTML/CSS/JS/Canvas) |
-| Node.js | 16.17.1 | 主进程 JavaScript 运行时 |
-| pdfjs-dist | 3.11.174 | PDF 解析与 Canvas 渲染 |
-| pdf-lib | 1.17.1 | PDF 矢量创建与页面拼版 |
-| SumatraPDF | 3.2+ | 命令行静默打印驱动 |
-| electron-builder | 24.9.1 | 应用打包与分发 |
-| NSIS | 3.0.4.1 | Windows 安装包制作 |
-| rcedit | — | PE 文件资源编辑 (图标/版本信息) |
-
-### 6.1 版本选择依据
-
-```
-Electron 22.3.27 (Chromium 108) + pdfjs-dist 3.11.174
-```
-
-| 约束 | 条件 | 方案 |
-|------|------|------|
-| 支持 Windows 7 | Electron ≤ 22 | 22.3.27 — 最后一个 Win7 兼容版本 |
-| ES2022 `.at()` API | Chromium ≥ 92 | 108 — 完整支持 |
-| 中文 CMap 字体 | pdfjs-dist cmaps/ | 3.11.174 — 内置完整 CMap |
-| 业务代码不变 | API 向前兼容 | pdfjs-dist 3.x — API 稳定 |
-
-## 7. 开发环境
-
-### 7.1 开发工具链
-
-| 工具 | 版本 | 用途 |
-|------|------|------|
-| Node.js | 18.20.x LTS | JavaScript 运行时环境 |
-| npm | 9.x | 包管理与脚本执行 |
-| Git | 2.x | 版本控制 |
-| VS Code | 1.98+ | 代码编辑与调试 |
-| PowerShell | 5.1 | 构建脚本与 Windows 系统管理 |
-| 7-Zip | 21.07 | 压缩归档 (electron-builder 内部依赖) |
-
-### 7.2 VS Code 扩展
-
-| 扩展标识 | 版本 | 用途 |
-|----------|------|------|
-| `anthropic.claude-code` | 2.1.144 | AI 编程助手 (代码生成、架构设计、问题诊断) |
-| `ms-ceintl.vscode-language-pack-zh-hans` | 1.118 | 中文界面语言包 |
-
-### 7.3 AI 大模型
-
-| 模型 | 提供方 | 用途 |
-|------|--------|------|
-| Claude Opus 4.7 | Anthropic | 主力开发: 复杂代码生成、架构重构、深度问题诊断 |
-| Claude Sonnet 4.6 | Anthropic | 辅助开发: 文档编写、代码审查、快速问答 |
-| DeepSeek V4 Pro | DeepSeek | 兼容性: Windows API 分析、平台适配验证 |
-
-本项目的 AI 开发工作流:
-
-- `.claude/CLAUDE.md` 定义项目规则与约束，AI 自动加载
-- `.claude/settings.json` 管理权限与工具配置
-- 所有代码变更经 AI 辅助审查与测试验证
-
-### 7.4 依赖安装
-
-```powershell
-# 国内镜像加速
-$env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
-npm config set registry https://registry.npmmirror.com
-
-# 安装
-npm ci
-```
-
-## 8. 项目结构
-
-```
-pdftools/
-├── main.js              # 主进程: IPC/拼版/打印/菜单
-├── preload.js           # contextBridge 安全桥接
-├── start.js             # 开发启动器
-├── build.js             # 构建脚本
-├── installer.nsh        # NSIS 安装器配置
-├── package.json         # 依赖与构建元数据
-├── CHANGELOG.md         # 项目根变更日志
-├── README.md            # 项目根说明
+PDF发票打印工具 for Win7/
+├── main.js                  # Electron 主进程（980 行）
+├── preload.js               # IPC 桥接（43 行）
+├── start.js                 # 开发启动器脚本（12 行）
+├── build.js                 # 构建脚本（34 行）
+├── build-portable.bat       # 便携版构建批处理（3 行）
+├── build-portable.ps1       # 便携版构建 PowerShell 脚本（52 行）
+├── installer.nsh            # NSIS 安装器配置（1 行）
+├── package.json             # 项目配置与依赖
+├── src/
+│   ├── index.html           # 主界面 HTML + CSP（212 行）
+│   ├── styles.css           # 全局样式表（854 行）
+│   ├── app.js               # 渲染进程入口（244 行）
+│   ├── tabs.js              # 标签页管理器（306 行）
+│   ├── pdf-viewer.js        # PDF 渲染器（174 行）
+│   ├── print-panel.js       # 打印工作区面板（503 行）
+│   ├── split-panel.js       # PDF 拆分面板（195 行）
+│   └── merge-panel.js       # PDF 合并面板（225 行）
 ├── assets/
-│   ├── icon.ico         # Windows 图标 (多分辨率)
-│   └── icon.png         # 源图标 (256×256)
+│   ├── pdftools.png         # 应用图标 (PNG)
+│   ├── pdftools.ico         # 应用图标 (ICO)
+│   ├── 蓝编辑.ico            # 工具栏按钮图标（阅读）
+│   ├── 蓝星星.ico            # 工具栏按钮图标（合并）
+│   ├── 蓝打印.ico            # 工具栏按钮图标（打印）
+│   └── 蓝属性2.ico           # 工具栏按钮图标（拆分）
 ├── SumatraPDF/
-│   └── SumatraPDF.exe   # 打印驱动 (~19 MB)
-├── docs/
-│   ├── BACKUP.md        # 备份规范
-│   ├── VERSION.md       # 版本规范
-│   ├── CHANGELOG.md     # 变更日志
-│   └── README.md        # 本文件
-├── bak/
-│   ├── source/          # 源代码归档
-│   ├── dev-tools/       # 开发工具缓存
-│   ├── patches/         # 运行时补丁
-│   └── publish/         # 发布产物
-└── src/
-    ├── index.html       # 主页面 (含 CSP 策略)
-    ├── styles.css       # 样式表 (CSS 自定义属性)
-    ├── app.js           # 渲染器入口
-    ├── tabs.js          # 标签管理器
-    ├── pdf-viewer.js    # PDF 查看器
-    └── print-panel.js   # 打印面板
+│   ├── SumatraPDF.exe       # SumatraPDF 便携版
+│   └── SumatraPDF-settings.txt
+├── bak/                     # 构建输出目录
+├── docs/                    # 项目文档（7 份）
+└── node_modules/            # 依赖包
+
+总代码量：~3,693 行
 ```
 
-## 9. 构建
+---
 
-### 9.1 前置条件
+## 📖 文档
 
-- Node.js >= 18
-- npm >= 9
-- Windows 10/11 (构建主机)
-- Electron 镜像可访问
+| 文档 | 说明 |
+|------|------|
+| [01 系统说明](docs/01%20系统说明.md) | 系统架构、数据流、安全模型、开发环境（含大模型信息） |
+| [02 版本说明](docs/02%20版本说明.md) | 版本管理策略、递增规则、兼容性矩阵、发布历史 |
+| [03 业务说明](docs/03%20业务说明.md) | 产品定位、业务流程、用户视角操作指南 |
+| [04 技术说明](docs/04%20技术说明.md) | 技术栈、进程模型、IPC 通道、子系统详解、文件清单 |
+| [05 UI说明](docs/05%20UI说明.md) | 设计系统、布局结构、交互状态、组件说明 |
+| [06 备份说明](docs/06%20备份说明.md) | 备份策略、文件清单、恢复步骤、bak 目录说明 |
+| [07 开发日志](docs/07%20开发日志.md) | 版本变更记录（Changelog）、代码审查记录 |
 
-### 9.2 三步构建
+文档共 7 份，覆盖系统、版本、业务、技术、UI、备份、开发日志七个维度。
 
-```powershell
-$env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
+---
 
-# 步骤 1: 打包应用
-npx electron-builder --dir --config.win.signAndEditExecutable=false
-# 输出: bak/win-unpacked/
+## ❓ 常见问题
 
-# 步骤 2: 修复 exe 元数据 + 嵌入图标
-$rcedit = "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign\091439615\rcedit-x64.exe"
-$exe = "bak\win-unpacked\PDF发票打印工具.exe"
-& $rcedit $exe --set-version-string FileDescription "PDF发票打印工具"
-& $rcedit $exe --set-version-string ProductName "PDF发票打印工具 for Win7"
-& $rcedit $exe --set-version-string OriginalFilename "PDF发票打印工具.exe"
-& $rcedit $exe --set-version-string InternalName "PDF发票打印工具"
-& $rcedit $exe --set-version-string CompanyName "帅气的锅巴"
-& $rcedit $exe --set-icon assets\icon.ico
+### Q: 为什么选择 Electron 22 而不是最新版？
 
-# 步骤 3a: 生成 NSIS 安装包
-npx electron-builder --win nsis --config.win.signAndEditExecutable=false `
-    --prepackaged bak\win-unpacked
-# 输出: bak/publish/PDF发票打印工具_v1.46.20260525.exe
+Electron 22 是最后一个官方支持 Windows 7/8/8.1 的版本。大量企事业单位仍在使用 Windows 7，本工具的目标用户群体需要 Win7 兼容性。
 
-# 步骤 3b: 生成便携版 exe（Win7 双击运行）
-npx electron-builder --win portable --config.win.signAndEditExecutable=false `
-    --prepackaged bak\win-unpacked
-# 输出: bak/publish/PDF发票打印工具_v1.46.20260525_portable.exe
-```
+### Q: 打印时提示"未找到 SumatraPDF.exe"怎么办？
 
-> 步骤 2 是必需的: `signAndEditExecutable=false` 跳过了 electron-builder 内置的 rcedit 调用。未执行此步骤时，exe 将保留上游 Electron 的 VERSIONINFO 字段 ("electron"、"electron.exe") 和默认 Electron 图标。
+SumatraPDF 随应用打包分发。如果缺失，请重新安装应用，或手动下载 [SumatraPDF 便携版](https://www.sumatrapdfreader.org/download-free-pdf-viewer) 放置到安装目录下的 `resources/SumatraPDF/` 文件夹。
 
-## 10. 已知问题与缓解
+### Q: 发票排版后文字太小/太大怎么办？
 
-### 10.1 Electron 版本漂移
+调整打印工作区左侧的页边距滑块（0~3cm）。边距越小，发票可用的页面空间越大。如果发票原始尺寸特殊（非标准 A5/A4），缩放结果可能不理想。
 
-**症状**: `npm install` 后 Electron 版本变为 27.x，Win7 上启动无窗口。
+### Q: 打印机列表为空？
 
-**根因**: 依赖声明中的 `^` 前缀允许 npm 解析到更高大版本。
+点击打印机选择器旁的 [🔄] 刷新按钮。如果仍为空，请检查 Windows 控制面板中是否已安装打印机驱动。
 
-**缓解**: `package.json` 中 electron 使用精确版本 `"electron": "22.3.27"`。
+### Q: 拆分文档的自定义范围怎么写？
 
-### 10.2 UserChoice 哈希
+使用逗号分隔范围，每个范围可以是单页（如 `5`）或起止页（如 `1-3`）。例如：`1-3,5,7-9` 表示第 1~3 页、第 5 页、第 7~9 页分别拆分为独立文件。
 
-**症状**: 直接写 `HKCU\Software\Classes\.pdf` 注册表无法更改默认 PDF 打开程序。
+---
 
-**根因**: Windows 7 (KB2922717+) 对 `UserChoice\Progid` 值进行哈希校验: `SHA256(ProgID + 用户 SID + 系统盐值)`。任意写入被静默忽略。
+## 🤝 贡献
 
-**缓解**: 使用 `shell32.dll,OpenAs_RunDLL` 调起系统"打开方式"对话框，由 Windows 内部完成哈希计算。
+本项目为内部工具，暂未开放外部贡献。如有建议或问题，请联系作者。
 
-### 10.3 winCodeSign 符号链接
+### 贡献者
 
-**症状**: 7za 在 Windows 上提取 winCodeSign-2.6.0.7z 时报错退出。
+- **帅气的锅巴** — 架构设计、核心开发、文档编写
 
-**根因**: 压缩包内含 macOS `.dylib` 符号链接，Windows 创建符号链接需要额外权限。
+---
 
-**缓解**: 尽管 7za 返回非零退出码，Windows 所需的 `rcedit-x64.exe` 和 `rcedit-ia32.exe` 已成功提取。使用缓存中的版本即可。
+## 📄 许可
 
-## 11. Windows 7 部署
+本项目代码采用 MIT 许可证。
 
-| 步骤 | 文件 | 大小 | 说明 |
-|------|------|------|------|
-| 1 | Windows6.1-KB976932-X64.exe | 903 MB | 安装 SP1 (已装可跳过，需重启) |
-| 2 | Windows6.1-KB2533623-x64.msu | 2.2 MB | 安装 KB2533623 (必须) |
-| 3 | VC_redist.x64.exe | 24 MB | 安装 VC++ 2015 运行库 (必须) |
-| 4 | PDF发票打印工具_v1.46.20260525.exe | 82 MB | 安装主程序 |
+使用以下开源组件，各组件遵循其原始许可：
 
-## 12. 文档索引
+- [Electron](https://github.com/electron/electron) — MIT
+- [PDF.js](https://github.com/mozilla/pdf.js) — Apache-2.0
+- [pdf-lib](https://github.com/Hopding/pdf-lib) — MIT
+- [SumatraPDF](https://github.com/sumatrapdfreader/sumatrapdf) — GPL-3.0
+- [electron-builder](https://github.com/electron-userland/electron-builder) — MIT
 
-| 文档 | 路径 | 说明 |
-|------|------|------|
-| 备份说明 | [docs/BACKUP.md](BACKUP.md) | 备份结构定义与环境重建步骤 |
-| 版本规范 | [docs/VERSION.md](VERSION.md) | 版本号格式定义与同步规则 |
-| 变更日志 | [docs/CHANGELOG.md](CHANGELOG.md) | Keep a Changelog 格式的版本变更记录 |
-| 项目说明 | [docs/README.md](README.md) | 本文件 |
-| 项目规则 | [../.claude/CLAUDE.md](../.claude/CLAUDE.md) | Claude Code 开发规则与约束 |
+### 开发辅助
 
-## 13. 参考资料
+本项目开发过程中使用了以下 AI 大模型辅助：
 
-- Electron 22.x: https://www.electronjs.org/docs/latest
-- pdfjs-dist: https://github.com/mozilla/pdf.js
-- pdf-lib: https://github.com/Hopding/pdf-lib
-- SumatraPDF: https://www.sumatrapdfreader.org
-- electron-builder: https://www.electron.build
-- NSIS: https://nsis.sourceforge.io
-- Keep a Changelog: https://keepachangelog.com/zh-CN/1.1.0/
-- 语义化版本: https://semver.org/lang/zh-CN/
+- **Claude Code (Anthropic)** — 基于 Claude Opus 4.8 / Sonnet 4.6 系列模型，用于代码生成、架构设计、代码审查
+- **DeepSeek-V4 Pro** — 用于代码分析、文档生成、逻辑推理
 
-## 14. 许可
+---
 
-MIT © 帅气的锅巴
+<div align="center">
+
+**PDF发票打印工具 for Win7** — 让发票打印更高效
+
+</div>
