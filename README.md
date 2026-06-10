@@ -2,7 +2,7 @@
 
 > PDF 阅读 · 发票批量拼版打印 · 内容遮挡脱敏 · 文件拆分合并
 
-![Version](https://img.shields.io/badge/version-v2.01-blue)
+![Version](https://img.shields.io/badge/version-v2.12-blue)
 ![Electron](https://img.shields.io/badge/electron-22.3.27-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-Windows%207%2B-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -15,17 +15,18 @@
 
 ### 核心功能
 
-- **📖 PDF 阅读**：多标签页 PDF 查看器，支持连续滚动/单页模式、缩放、适应宽度/页面
+- **📖 PDF 阅读**：多标签页 PDF 查看器，支持连续滚动/单页模式、缩放、适应宽度/页面、Ctrl+滚轮缩放
 - **🧾 发票拼版打印**：二合一 A4 拼版引擎，两张发票自动排版到一张 A4 纸，节约 50% 纸张
 - **📄 文件直通打印**：单文件/批量打印，支持页面方向、纸张方向、页码范围过滤
 - **🔒 内容遮挡**：PDF 页面敏感信息脱敏，矩形遮罩 + 自定义文字覆盖，支持中文字体
 - **✂️ PDF 拆分**：每页独立 / 每 N 页一组 / 自定义范围三种拆分模式
 - **🔗 PDF 合并**：多文件拖拽排序合并，支持上移下移调整顺序
-- **📑 页面管理**：PDF 页面旋转、删除、重排序
+- **📑 页面管理**：PDF 页面旋转、删除、重排序，支持增加文件、添空白页、另存为
 
 ### 特色
 
 - ✅ **Windows 7 兼容**：基于 Electron 22（最后支持 Win7 的版本），支持 Win7 SP1 x64+
+- ✅ **NSIS 安装程序**：内置 VC++ 运行时 DLL，纯净 Win7 无需单独安装 VC++ Redistributable
 - ✅ **离线可用**：所有功能本地完成，无需网络连接
 - ✅ **绿色便携**：提供免安装便携版，解压即用
 - ✅ **中文友好**：完整 CJK 字体支持，中文界面、中文发票无乱码
@@ -37,7 +38,7 @@
 
 ### 下载
 
-从 [Releases](../../releases) 页面下载最新便携版 EXE，直接运行即可。
+从 [Releases](../../releases) 页面下载最新安装程序或便携版 EXE。
 
 ### 从源码运行
 
@@ -52,8 +53,8 @@ npm install
 # 3. 开发运行
 npm start
 
-# 4. 构建便携版
-npm run build:portable
+# 4. 构建安装程序
+npm run build:installer
 ```
 
 ---
@@ -85,35 +86,39 @@ npm run build:portable
 | PDF 渲染 | pdfjs-dist | 3.11.174 |
 | PDF 操作 | pdf-lib + @pdf-lib/fontkit | 1.17.1 |
 | 静默打印 | SumatraPDF | 便携版 |
-| 打包分发 | electron-builder | 24.9.1 |
+| 打包分发 | electron-builder | 24.13.3 |
+| 安装框架 | NSIS | 3.x |
+| 运行时依赖 | VC++ 2015-2022 | vcruntime140 / vcruntime140_1 / msvcp140 / concrt140 |
 
 ---
 
 ## 项目结构
 
 ```
-├── main.js              # Electron 主进程（1,319 行）
-├── preload.js           # 安全桥接（49 行）
-├── start.js             # 开发启动器（9 行）
-├── build.js             # 构建脚本（26 行）
+├── main.js              # Electron 主进程（1,520 行）
+├── preload.js           # 安全桥接（58 行）
+├── start.js             # 开发启动器（12 行）
+├── build.js             # 构建脚本（35 行）
 ├── package.json         # 项目配置
+├── installer.nsh        # NSIS 安装钩子（VC++ 运行时部署）
 ├── src/
-│   ├── index.html       # 主界面（214 行）
-│   ├── styles.css       # 全局样式（1,047 行）
-│   ├── app.js           # 渲染入口 + getCMapUrl()（391 行）
-│   ├── tabs.js          # 标签管理（352 行）
-│   ├── pdf-viewer.js    # PDF 渲染器（176 行）
-│   ├── print-panel.js   # 打印工作区（638 行）
-│   ├── split-panel.js   # 拆分面板（195 行）
-│   ├── merge-panel.js   # 合并面板（227 行）
-│   └── page-manager.js  # 页面管理（392 行）
+│   ├── index.html       # 主界面（232 行）
+│   ├── styles.css       # 全局样式（1,193 行）
+│   ├── app.js           # 渲染入口 + getCMapUrl()（442 行）
+│   ├── tabs.js          # 标签管理（456 行）
+│   ├── pdf-viewer.js    # PDF 渲染器（212 行）
+│   ├── print-panel.js   # 打印工作区（735 行）
+│   ├── split-panel.js   # 拆分面板（222 行）
+│   ├── merge-panel.js   # 合并面板（252 行）
+│   └── page-manager.js  # 页面管理（596 行）
 ├── docs/                # 项目文档（7 份）
 ├── assets/              # 应用图标（含 .ico 按钮图标）
 ├── SumatraPDF/          # SumatraPDF 便携版
+├── vcredist/            # VC++ 运行时 DLL（Win7 兼容）
 └── bak/                 # 构建输出 + 源码备份
 ```
 
-**总计：5,035 行源代码**
+**总计：5,965 行源代码**
 
 ---
 
@@ -148,14 +153,15 @@ npm run build:portable
 
 - **IDE**：Visual Studio Code
 - **运行时**：Node.js 16.17.1
-- **AI 辅助**：Claude Opus 4.8 / Sonnet 4.6 (Anthropic)、DeepSeek-V4 Pro
+- **AI 辅助**：Claude Opus 4.8 / Sonnet 4.6 / Haiku 4.5 (Anthropic)、DeepSeek-V4 Pro
 
 ### 构建命令
 
 ```bash
-npm start              # 开发运行
-npm run build          # 构建 NSIS 安装程序
-npm run build:portable # 构建便携版 (x64)
+npm start               # 开发运行
+npm run build           # 构建 NSIS 安装程序（版本号自动递增）
+npm run build:portable  # 构建便携版 (x64)
+npm run build:installer # 构建 NSIS 安装程序 (x64)
 ```
 
 ---
@@ -179,4 +185,4 @@ npm run build:portable # 构建便携版 (x64)
 
 ---
 
-*最后更新：2026-06-06 · v2.01*
+*最后更新：2026-06-10 · v2.12*
